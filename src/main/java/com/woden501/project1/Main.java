@@ -1,5 +1,6 @@
 package com.woden501.project1;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -47,107 +48,100 @@ public class Main {
 			i++;
 		}
 
-		// ToDo: Count the number of characters in each message
 		for (Message message : messages) {
-			message.setNumChars(message.getMessageContents().length());
-		}
-
-		i = 1;
-		for (Message message : messages) {
-			System.out.println(i + ": " + message.getNumChars() + ", " + message.getMessageType());
-			i++;
-		}
-
-		// Count the number of currency symbols in each message
-		for (Message message : messages) {
-			int currencySymbolCount = 0;
-
-			// Look at every character in the message, and check if it is a currency symbol
-			for (int j = 0; j < message.getMessageContents().length(); j++) {
-				if (Character.getType(message.getMessageContents().charAt(j)) == Character.CURRENCY_SYMBOL) {
-					currencySymbolCount++;
-				}
-			}
-			message.setNumCurrencySymbols(currencySymbolCount);
-		}
-
-		i = 1;
-		for (Message message : messages) {
-			System.out.println(i + ": " + message.getNumCurrencySymbols() + ", " + message.getMessageType());
-			i++;
-		}
-
-		// ToDo: Count the number of numeric strings
-		for (Message message : messages) {
-			int numNumericStrings = 0;
-			Pattern p = Pattern.compile("-?\\d+");
-			Matcher m = p.matcher(message.getMessageContents());
-			while (m.find()) {
-				numNumericStrings++;
-			}
-
-			message.setNumNumericStrings(numNumericStrings);
-		}
-
-		i = 1;
-		for (Message message : messages) {
-			System.out.println(i + ": " + message.getNumNumericStrings() + ", " + message.getMessageType());
-			i++;
-		}
-
-		// Find frequency of most used word
-		for (Message message : messages) {
-			// Remove non-whitespace and non-apostrophe puncutation
-			String noPuncationString = message.getMessageContents().replaceAll("[^A-Za-z' ]+", "");
+			// Count the number of characters in each message
+			countCharacters(message);
 			
-			// Break string into it's component words
-			String[] words = noPuncationString.split(" ");
+			// Count the number of currency symbols in each message
+			countCurrencySymbols(message);
 			
-			// Iterate over every word in the message counting how many times it's been encountered
-			// and comparing to the current highest count
-			HashMap<String, Integer> wordCount = new HashMap<>();
-			int highestCount = 0;
-			for (String word : words) {
-				Integer currentCount = wordCount.get(word);
-				
-				if (currentCount == null) {
-					currentCount = 1;
-					wordCount.put(word, currentCount);
-				}
-				else {
-					currentCount++;
-					wordCount.put(word, currentCount);
-				}
-				
-				if (currentCount > highestCount) {
-					highestCount = currentCount;
-				}
-			}
+			// Count the number of numeric strings
+			countNumericStrings(message);
 			
-			message.setFrequencyMostUsedWord(highestCount);
+			// Find frequency of most used word
+			findWordFrequency(message);
 		}
-		
+
 		i = 1;
 		for (Message message : messages) {
-			System.out.println(i + ": " + message.getFrequencyMostUsedWord() + ", " + message.getMessageType());
+			System.out.println(i + ": " + message.toString());
 			i++;
 		}
 
 		// Write counts to file in ARFF format
-		String arffOutput = "";
+		// Start by generating string
+		String arffOutput = "@RELATION spam\n";
+		arffOutput += "@ATTRIBUTE charcount NUMERIC\n";
+		arffOutput += "@ATTRIBUTE currencycount NUMERIC\n";
+		arffOutput += "@ATTRIBUTE numericcount NUMERIC\n";
+		arffOutput += "@ATTRIBUTE frequencycount NUMERIC\n";
+		arffOutput += "@ATTRIBUTE class {ham, spam}\n";
+		arffOutput += "\n@DATA\n";
+		for (Message message : messages) {
+			arffOutput += message.toString() + "\n";
+		}
+		
+		// Write string to disk
+		try {
+			Files.writeString(Path.of("projectArff.txt"), arffOutput);
+		} catch (IOException e) {
+			System.out.println("Unable to write ARFF output to disk. Exception: " + e.getMessage());
+			System.exit(1);
+		}
+	}
 
-//		// Finding all characters used
-//		HashSet<Character> charactersUsed = new HashSet<>();
-//		for (String line : lines) {
-//			for (int j = 0; j < line.length(); j++) {
-//				charactersUsed.add(line.charAt(j));
-//			}
-//		}
-//		
-//		for(Character character : charactersUsed) {
-//			if (Character.getType(character) == Character.) {
-//				System.out.println(character + ": true");
-//			}
-//		}
+	private static void countCharacters(Message message) {
+		message.setNumChars(message.getMessageContents().length());
+	}
+
+	private static void countCurrencySymbols(Message message) {
+		int currencySymbolCount = 0;
+		// Look at every character in the message, and check if it is a currency symbol
+		for (int j = 0; j < message.getMessageContents().length(); j++) {
+			if (Character.getType(message.getMessageContents().charAt(j)) == Character.CURRENCY_SYMBOL) {
+				currencySymbolCount++;
+			}
+		}
+		message.setNumCurrencySymbols(currencySymbolCount);
+	}
+
+	private static void countNumericStrings(Message message) {
+		int numNumericStrings = 0;
+		Pattern p = Pattern.compile("-?\\d+");
+		Matcher m = p.matcher(message.getMessageContents());
+		while (m.find()) {
+			numNumericStrings++;
+		}
+		message.setNumNumericStrings(numNumericStrings);
+	}
+
+	private static void findWordFrequency(Message message) {
+		// Remove non-whitespace and non-apostrophe puncutation
+		String noPuncationString = message.getMessageContents().replaceAll("[^A-Za-z' ]+", "");
+		
+		// Break string into it's component words
+		String[] words = noPuncationString.split(" ");
+		
+		// Iterate over every word in the message counting how many times it's been encountered
+		// and comparing to the current highest count
+		HashMap<String, Integer> wordCount = new HashMap<>();
+		int highestCount = 0;
+		for (String word : words) {
+			Integer currentCount = wordCount.get(word);
+			
+			if (currentCount == null) {
+				currentCount = 1;
+				wordCount.put(word, currentCount);
+			}
+			else {
+				currentCount++;
+				wordCount.put(word, currentCount);
+			}
+			
+			if (currentCount > highestCount) {
+				highestCount = currentCount;
+			}
+		}
+		message.setFrequencyMostUsedWord(highestCount);
 	}
 }
