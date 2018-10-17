@@ -61,4 +61,8 @@ public class Message {
 	public void setFrequencyMostUsedWord(int frequencyMostUsedWord) {
 		this.frequencyMostUsedWord = frequencyMostUsedWord;
 	}
+	
+	public String toString() {
+		return numChars + "," + numCurrencySymbols + "," + numNumericStrings + "," + frequencyMostUsedWord + "," + messageType;
+	}
 }
