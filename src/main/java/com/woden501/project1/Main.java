@@ -83,7 +83,7 @@ public class Main {
 		
 		// Write string to disk
 		try {
-			Files.writeString(Path.of("projectArff.txt"), arffOutput);
+			Files.writeString(Path.of("project.arff"), arffOutput);
 		} catch (IOException e) {
 			System.out.println("Unable to write ARFF output to disk. Exception: " + e.getMessage());
 			System.exit(1);
